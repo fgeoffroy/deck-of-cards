@@ -153,7 +153,7 @@ var Deck = (function () {
 
   var maxZ = 52;
 
-  function _card(i, con) {
+  function _card(i) {
     var transform = prefix('transform');
 
     // calculate rank/suit, etc..
@@ -171,7 +171,7 @@ var Deck = (function () {
     var isFlippable = false;
 
     // self = card
-    var self = { i: i, rank: rank, suit: suit, pos: i, $el: $el, mount: mount, unmount: unmount, setSide: setSide, con: con };
+    var self = { i: i, rank: rank, suit: suit, pos: i, $el: $el, mount: mount, unmount: unmount, setSide: setSide };
 
     var modules = Deck.modules;
     var module;
@@ -208,6 +208,8 @@ var Deck = (function () {
       var x = _params$x === undefined ? self.x : _params$x;
       var _params$y = params.y;
       var y = _params$y === undefined ? self.y : _params$y;
+      var _params$z = params.z;
+      var z = _params$z === undefined ? self.z : _params$z;
       var _params$rot = params.rot;
       var rot = _params$rot === undefined ? self.rot : _params$rot;
       var ease$$ = params.ease;
@@ -215,12 +217,14 @@ var Deck = (function () {
       var onProgress = params.onProgress;
       var onComplete = params.onComplete;
 
-      var startX, startY, startRot;
-      var diffX, diffY, diffRot;
+      var startX, startY, startZ, startRot;
+      var diffX, diffY, diffZ, diffRot;
 
       animationFrames(delay, duration).start(function () {
         startX = self.x || 0;
         startY = self.y || 0;
+        console.log('aaaaaaaaaaaaaaaa');
+        startZ = self.z || 0;
         startRot = self.rot || 0;
         onStart && onStart();
       }).progress(function (t) {
@@ -228,15 +232,17 @@ var Deck = (function () {
 
         diffX = x - startX;
         diffY = y - startY;
+        diffZ = z - startZ;
         diffRot = rot - startRot;
 
         onProgress && onProgress(t, et);
 
         self.x = startX + diffX * et;
         self.y = startY + diffY * et;
+        self.z = startZ + diffZ * et;
         self.rot = startRot + diffRot * et;
 
-        $el.style[transform] = translate(self.x + 'px', self.y + 'px') + (diffRot ? 'rotate(' + self.rot + 'deg)' : '');
+        $el.style[transform] = translate(self.x + 'px', self.y + 'px', self.z + 'px') + (diffRot ? 'rotate(' + self.rot + 'deg)' : '');
       }).end(function () {
         onComplete && onComplete();
       });
@@ -342,7 +348,6 @@ var Deck = (function () {
         if (isFlippable && Date.now() - starttime < 200) {
           // flip sides
           self.setSide(self.side === 'front' ? 'back' : 'front');
-          self.con.emit('card_flipped');
         }
         if (e.type === 'mouseup') {
           removeListener(window, 'mousemove', onMousemove);
@@ -922,12 +927,12 @@ var Deck = (function () {
     }
   }
 
-  function Deck(jokers, con) {
+  function Deck(jokers) {
     // init cards array
-    var cards = new Array(jokers ? 55 : 52);
+    var cards = new Array(jokers ? 54 : 52);
 
     var $el = createElement('div');
-    var self = observable({ mount: mount, unmount: unmount, cards: cards, $el: $el, con: con });
+    var self = observable({ mount: mount, unmount: unmount, cards: cards, $el: $el });
     var $root;
 
     var modules = Deck.modules;
