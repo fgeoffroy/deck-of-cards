@@ -153,7 +153,7 @@ var Deck = (function () {
 
   var maxZ = 52;
 
-  function _card(i) {
+  function _card(i, con) {
     var transform = prefix('transform');
 
     // calculate rank/suit, etc..
@@ -171,7 +171,7 @@ var Deck = (function () {
     var isFlippable = false;
 
     // self = card
-    var self = { i: i, rank: rank, suit: suit, pos: i, $el: $el, mount: mount, unmount: unmount, setSide: setSide };
+    var self = { i: i, rank: rank, suit: suit, pos: i, $el: $el, mount: mount, unmount: unmount, setSide: setSide, con: con };
 
     var modules = Deck.modules;
     var module;
@@ -342,6 +342,7 @@ var Deck = (function () {
         if (isFlippable && Date.now() - starttime < 200) {
           // flip sides
           self.setSide(self.side === 'front' ? 'back' : 'front');
+          self.con.emit('card_flipped');
         }
         if (e.type === 'mouseup') {
           removeListener(window, 'mousemove', onMousemove);
@@ -921,12 +922,12 @@ var Deck = (function () {
     }
   }
 
-  function Deck(jokers) {
+  function Deck(jokers, con) {
     // init cards array
     var cards = new Array(jokers ? 55 : 52);
 
     var $el = createElement('div');
-    var self = observable({ mount: mount, unmount: unmount, cards: cards, $el: $el });
+    var self = observable({ mount: mount, unmount: unmount, cards: cards, $el: $el, con: con });
     var $root;
 
     var modules = Deck.modules;
