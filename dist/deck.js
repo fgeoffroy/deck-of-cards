@@ -153,7 +153,7 @@ var Deck = (function () {
 
   var maxZ = 52;
 
-  function _card(i) {
+  function _card(i, con) {
     var transform = prefix('transform');
 
     // calculate rank/suit, etc..
@@ -169,9 +169,11 @@ var Deck = (function () {
     // states
     var isDraggable = false;
     var isFlippable = false;
+    var isClickable = false;
 
+    var isSelected = false;
     // self = card
-    var self = { i: i, rank: rank, suit: suit, pos: i, $el: $el, mount: mount, unmount: unmount, setSide: setSide };
+    var self = { i: i, rank: rank, suit: suit, pos: i, $el: $el, mount: mount, unmount: unmount, setSide: setSide, con: con, isSelected: isSelected };
 
     var modules = Deck.modules;
     var module;
@@ -216,35 +218,43 @@ var Deck = (function () {
       var onStart = params.onStart;
       var onProgress = params.onProgress;
       var onComplete = params.onComplete;
+      var _params$change_side = params.change_side;
+      var change_side = _params$change_side === undefined ? false : _params$change_side;
 
-      var startX, startY, startZ, startRot;
-      var diffX, diffY, diffZ, diffRot;
+      var startX, startY, startRot;
+      var diffX, diffY, diffRot;
 
       animationFrames(delay, duration).start(function () {
         startX = self.x || 0;
         startY = self.y || 0;
-        console.log('aaaaaaaaaaaaaaaa');
-        startZ = self.z || 0;
         startRot = self.rot || 0;
         onStart && onStart();
+
       }).progress(function (t) {
         var et = ease[ease$$ || 'cubicInOut'](t);
 
         diffX = x - startX;
         diffY = y - startY;
-        diffZ = z - startZ;
         diffRot = rot - startRot;
 
         onProgress && onProgress(t, et);
 
         self.x = startX + diffX * et;
         self.y = startY + diffY * et;
-        self.z = startZ + diffZ * et;
         self.rot = startRot + diffRot * et;
 
-        $el.style[transform] = translate(self.x + 'px', self.y + 'px', self.z + 'px') + (diffRot ? 'rotate(' + self.rot + 'deg)' : '');
+        $el.style[transform] = translate(self.x + 'px', self.y + 'px') + (diffRot ? 'rotate(' + self.rot + 'deg)' : '');
       }).end(function () {
         onComplete && onComplete();
+        if (change_side) {
+          if (self.side == 'back') {
+            self.setSide('front');
+          } else {
+            self.setSide('back');
+          }
+        }
+        self.z = z;
+        self.$el.style.zIndex = z;
       });
     };
 
@@ -274,12 +284,28 @@ var Deck = (function () {
       isFlippable = true;
     };
 
+    self.enableClicking = function () {
+      if (isClickable) {
+        // already is flippable, do nothing
+        return;
+      }
+      isClickable = true;
+    };
+
     self.disableFlipping = function () {
       if (!isFlippable) {
         // already disabled flipping, do nothing
         return;
       }
       isFlippable = false;
+    };
+
+    self.disableClicking = function () {
+      if (!isClickable) {
+        // already disabled flipping, do nothing
+        return;
+      }
+      isClickable = false;
     };
 
     self.disableDragging = function () {
@@ -345,6 +371,18 @@ var Deck = (function () {
       }
 
       function onMouseup(e) {
+        if (isClickable && Date.now() - starttime < 200) {
+          if (self.position == -1) {
+            con.emit("stack");
+          } else {
+            con.emit("hand");
+          }
+
+          // if (is_combination_correct()) {
+          //   var selected_cards = get_selected_cards();
+          //   con.emit(selected_cards)
+          // }
+        }
         if (isFlippable && Date.now() - starttime < 200) {
           // flip sides
           self.setSide(self.side === 'front' ? 'back' : 'front');
@@ -927,12 +965,14 @@ var Deck = (function () {
     }
   }
 
-  function Deck(jokers) {
+  function Deck(jokers, con) {
     // init cards array
     var cards = new Array(jokers ? 54 : 52);
 
+    var hands = [];
+
     var $el = createElement('div');
-    var self = observable({ mount: mount, unmount: unmount, cards: cards, $el: $el });
+    var self = observable({ mount: mount, unmount: unmount, cards: cards, $el: $el, con: con});
     var $root;
 
     var modules = Deck.modules;
@@ -953,7 +993,7 @@ var Deck = (function () {
 
     // create cards
     for (var i = cards.length; i; i--) {
-      card = cards[i - 1] = _card(i - 1);
+      card = cards[i - 1] = _card(i - 1, con);
       card.setSide('back');
       card.mount($el);
     }
