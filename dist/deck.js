@@ -232,7 +232,7 @@ var Deck = (function () {
         startY = self.y || 0;
         startRot = self.rot || 0;
         onStart && onStart();
-        if (!(_params$z_start === undefined)) {
+        if (_params$z_start !== undefined) {
           self.z = z_start;
           self.$el.style.zIndex = z_start;
         }
@@ -251,7 +251,7 @@ var Deck = (function () {
         self.y = startY + diffY * et;
         self.rot = startRot + diffRot * et;
 
-        $el.style[transform] = translate(self.x + 'px', self.y + 'px') + (diffRot ? 'rotate(' + self.rot + 'deg)' : '');
+        $el.style[transform] = translate(self.x + 'px', self.y + 'px') + ( 'rotate(' + self.rot + 'deg)'); // diffRot ?  : ''
       }).end(function () {
         onComplete && onComplete();
         if (change_side) {
@@ -261,7 +261,7 @@ var Deck = (function () {
             self.setSide('back');
           }
         }
-        if (!(_params$z_end === undefined)) {
+        if (_params$z_end !== undefined) {
           self.z = z_end;
           self.$el.style.zIndex = z_end;
         }
@@ -381,11 +381,20 @@ var Deck = (function () {
       }
 
       function onMouseup(e) {
+        // Test if the combination of cards followw the rules. If yes, send the info to all the players
         if (isClickable && Date.now() - starttime < 200) {
           if (self.location == -1 || self.location == -2) {
-            if (is_combination_correct()) {
-              con.emit('play');
-              con.emit(get_selected_cards());
+            var combination = is_combination_correct();
+            if (combination[0]) {
+              disable_all_clicking();
+              var taken_card = self.location == -1 ? self.location : deck.discard.indexOf(self);
+              var msg = {
+                'user_ind': my_index,
+                'selected_cards_ind': get_selected_cards(get_ind=true),
+                'is_straight': combination[1],
+                'taken_card': taken_card
+              }
+              con.emit(msg);
             }
           } else {
             if (self.selected) {
@@ -397,6 +406,7 @@ var Deck = (function () {
             }
           }
         }
+
         if (isFlippable && Date.now() - starttime < 200) {
           // flip sides
           self.setSide(self.side === 'front' ? 'back' : 'front');
