@@ -384,17 +384,32 @@ var Deck = (function () {
         // Test if the combination of cards followw the rules. If yes, send the info to all the players
         if (isClickable && Date.now() - starttime < 200) {
           if (self.location == -1 || self.location == -2) {
-            var combination = is_combination_correct();
-            if (combination[0]) {
-              disable_all_clicking();
-              var taken_card = self.location == -1 ? self.location : deck.discard.indexOf(self);
-              var msg = {
-                'user_ind': my_index,
-                'selected_cards_ind': get_selected_cards(get_ind=true),
-                'is_straight': combination[1],
-                'taken_card': taken_card
+            if (my_turn) {
+              var combination = is_combination_correct();
+              if (combination[0]) {
+                disable_all_clicking();
+                var taken_card = self.location == -1 ? self.location : deck.discard.indexOf(self);
+                var msg = {
+                  'user_ind': my_index,
+                  'selected_cards_ind': get_selected_cards(get_ind=true),
+                  'is_straight': combination[1],
+                  'taken_card': taken_card
+                };
+                con.emit('card_msg', msg);
               }
-              con.emit(msg);
+            } else {
+              // tester si c'est la meme ou si ca complete une suite aux extremites
+              var slap_down = is_slap_down_correct(self.suit, self.rank);
+              if (slap_down) {
+                disable_all_clicking();
+                var msg = {
+                  'user_ind': my_index,
+                  'selected_cards_ind': get_selected_cards(get_ind=true),
+                };
+                con.emit('slap_down_msg', msg);
+              }
+              // puis envoyer le message à tout le monde
+
             }
           } else {
             if (self.selected) {
